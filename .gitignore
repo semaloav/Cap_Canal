@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.next/
+.wrangler/
+.sites-runtime/
+.env*
+!.env.example
+*.log
+*-result.json
+.vinext/
+*.tsbuildinfo
+*-pid.json
