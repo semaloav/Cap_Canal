@@ -39,14 +39,16 @@ export function Review({r,d}:{r:Hydro;d:Project}){return <div className="checks"
 export function LongProfile({rows,profile=[]}:{rows:SectionRow[];profile?:{station:number;ground:number}[]}){
  const plotted=rows.length?rows:profile.map(p=>({station:p.station,ground:p.ground,invert:null,water:null,crown:null}));
  if(!plotted.length)return <div className="chart-empty">Añade puntos de terreno para visualizar el perfil longitudinal.</div>;
- const stations=plotted.map(p=>p.station),minS=Math.min(...stations),maxS=Math.max(...stations),vals=plotted.flatMap(p=>[p.ground,p.invert,p.water,p.crown]).filter(v=>v!==null&&Number.isFinite(v)) as number[];
+ const barRows=rows.flatMap(row=>(row.barriers??[]).map(a=>({row,a})));
+ const stations=plotted.map(p=>p.station),minS=Math.min(...stations),maxS=Math.max(...stations),vals=[...plotted.flatMap(p=>[p.ground,p.invert,p.water,p.crown]),...barRows.flatMap(({row,a})=>[row.invert+a.crest,row.invert+a.opening])].filter(v=>v!==null&&Number.isFinite(v)) as number[];
  if(!vals.length)return null;const low=Math.min(...vals),high=Math.max(...vals),span=Math.max(high-low,.5),minY=low-span*.12,maxY=high+span*.12,x=(s:number)=>65+(s-minS)/(maxS-minS||1)*760,y=(v:number)=>245-(v-minY)/(maxY-minY)*205;
  function paths(key:"ground"|"invert"|"water"|"crown"){let path="",pen=false;for(const p of plotted){const v=p[key];if(v===null||!Number.isFinite(v)){pen=false;continue;}path+=(pen?" L":" M")+x(p.station)+","+y(v);pen=true;}return path;}
  return <div className="long-profile"><svg viewBox="0 0 880 295" role="img" aria-label="Perfil longitudinal de terreno, fondo del canal, agua y coronación">
  {[0,.25,.5,.75,1].map(t=><g key={t}><line x1="65" y1={245-t*205} x2="825" y2={245-t*205} stroke="#e1e9ed"/><text x="56" y={249-t*205} textAnchor="end" className="svg-small">{fmt(minY+(maxY-minY)*t,2)}</text><text x={65+760*t} y="266" textAnchor="middle" className="svg-small">{stationLabel(minS+(maxS-minS)*t)}</text></g>)}
  <path d={paths("ground")} fill="none" stroke="#a28757" strokeWidth="2"/><path d={paths("invert")} fill="none" stroke="#264c62" strokeWidth="2.5"/><path d={paths("water")} fill="none" stroke="#25a5bd" strokeWidth="1.5"/><path d={paths("crown")} fill="none" stroke="#8da5af" strokeWidth="1.5" strokeDasharray="6 4"/>
+ {barRows.map(({row,a})=><g key={a.id}><line x1={x(row.station)} x2={x(row.station)} y1={y(row.invert+a.opening)} y2={y(row.invert+a.crest)} stroke="#b48b4f" strokeWidth="5"/><circle cx={x(row.station)} cy={y(row.invert+a.crest)} r="3" fill="#b48b4f"/><text x={x(row.station)+6} y={y(row.invert+a.crest)-7} className="svg-small" fill="#9b7948">{a.name}</text></g>)}
  <text x="65" y="20" className="svg-small">Cota (m) · exageración vertical variable</text><text x="826" y="288" className="svg-small" textAnchor="end">Progresiva</text></svg>
- <div className="legend"><span><i style={{background:"#a28757"}}/>Terreno</span><span><i className="wall"/>Fondo</span><span><i/>Agua (flujo uniforme local)</span><span>Coronación — —</span></div></div>;
+ <div className="legend"><span><i style={{background:"#a28757"}}/>Terreno</span><span><i className="wall"/>Fondo</span><span><i/>Agua (flujo uniforme local)</span><span>Coronación — —</span>{barRows.length>0&&<span className="barrier-legend"><i style={{background:"#b48b4f"}}/>Barraje de lámina</span>}</div></div>;
 }
 export function PlanView({rows}:{rows:SectionRow[]}){
  const points=rows.filter(r=>r.plan);if(points.length<2)return <div className="chart-empty">Activa la geometría en planta para visualizar el trazado.</div>;

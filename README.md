@@ -1,10 +1,10 @@
-# Cap_Canal v2
+# Cap_Canal v2.1
 Aplicación web privada para diseñar un canal completo por progresivas, mantener varios proyectos y exportar el anexo técnico.
 
 ## Flujo en cinco pestañas
 1. **Proyecto y perfil:** identificación, material/revestimiento, progresivas inicial/final, intervalo, referencia de cotas y perfil del terreno editable o pegado desde Excel.
 2. **Alineamiento:** cota de fondo inicial y rasante continua por tramos; geometría opcional en planta con rectas y curvas circulares tangentes (coordenadas iniciales y azimut).
-3. **Sección típica:** geometría rectangular, trapezoidal o triangular, caudal, Manning, dimensiones, borde libre y límites de velocidad.
+3. **Sección típica y barrajes:** geometría rectangular, trapezoidal o triangular, caudal, Manning, dimensiones, borde libre y límites de velocidad.
 4. **Secciones:** malla por progresivas con la típica aplicada; edición de parámetros por celda, materiales/observaciones en Detalle, restauración a la típica, cotas y resultados por sección.
 5. **Exportar anexo:** memoria completa imprimible en PDF (A4 horizontal), tablas de todas las secciones, CSV y respaldo del proyecto en JSON.
 
@@ -36,3 +36,10 @@ Canal prismático por sección, flujo permanente uniforme local; pendiente de en
 ## Referencias
 - USACE HEC-RAS, Uniform Flow Computations: https://www.hec.usace.army.mil/confluence/rasdocs/ras1dtechref/6.6/stable-channel-design-functions/uniform-flow-computations
 - USBR, Water Measurement Manual, cap. 2, sección 11: https://www.usbr.gov/tsc/techreferences/mands/wmm/chap02_11.html
+
+## Barrajes de lámina
+En la pestaña Sección típica se pueden añadir hasta 20 láminas por progresiva, definidas por espesor longitudinal, cresta sobre el fondo y abertura inferior opcional. La progresiva identifica la cara aguas arriba. Cada barraje se incorpora a la malla de secciones, al perfil, al CSV y al anexo completo. Se permiten configuraciones apoyada en el fondo para rebose o levantada para paso inferior; si se supera la cresta pueden ocurrir ambos pasos.
+La evaluación hidráulica local es opcional, con tirantes aguas arriba/abajo y coeficientes Cd ingresados por el usuario. Los valores iniciales son de ejemplo y no constituyen selección normativa. Se usa integración hidrostática por franjas: rebose libre y orificio con entrada cubierta. Para orificio rectangular sumergido, Q=Cd*A*sqrt(2*g*(y1-y2)); la generalización a ancho variable requiere calibración. Se omiten velocidad de aproximación, rebose sumergido, flujo inverso, corrección por cresta gruesa e interacción entre estructuras. No se modifica el perfil de agua ni se resuelve remanso.
+El respaldo JSON v3 incorpora barrajes y admite importación de v1/v2/v3. Sin migración de tablas: se conserva todo en payload.
+Pruebas adicionales: node tests/barriers.test.mjs.
+Referencias del elemento: https://www.usbr.gov/tsc/techreferences/mands/wmm/chap02_09.html y https://www.usbr.gov/tsc/techreferences/mands/wmm/chap09_05.html.
