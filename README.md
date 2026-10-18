@@ -1,21 +1,38 @@
-# Cap_Canal
-Aplicación web privada para crear, editar, duplicar y eliminar diseños de canales abiertos, guardarlos en línea y generar anexos técnicos imprimibles en PDF.
+# Cap_Canal v2
+Aplicación web privada para diseñar un canal completo por progresivas, mantener varios proyectos y exportar el anexo técnico.
 
-## Funciones
-- Canales rectangulares, trapezoidales y triangulares en unidades SI.
-- Tirante normal por Manning, tirante crítico, velocidad, Froude, geometría hidráulica, capacidad con borde libre y esfuerzo cortante medio.
-- Sección gráfica, curva caudal–tirante y verificaciones según criterios introducidos por el usuario.
-- Reporte/anexo con identificación, entradas, ecuaciones, resultados, gráfico, observaciones y referencias.
-- Guardado por usuario con protección contra cambios simultáneos; exportación e importación de un diseño en JSON.
+## Flujo en cinco pestañas
+1. **Proyecto y perfil:** identificación, material/revestimiento, progresivas inicial/final, intervalo, referencia de cotas y perfil del terreno editable o pegado desde Excel.
+2. **Alineamiento:** cota de fondo inicial y rasante continua por tramos; geometría opcional en planta con rectas y curvas circulares tangentes (coordenadas iniciales y azimut).
+3. **Sección típica:** geometría rectangular, trapezoidal o triangular, caudal, Manning, dimensiones, borde libre y límites de velocidad.
+4. **Secciones:** malla por progresivas con la típica aplicada; edición de parámetros por celda, materiales/observaciones en Detalle, restauración a la típica, cotas y resultados por sección.
+5. **Exportar anexo:** memoria completa imprimible en PDF (A4 horizontal), tablas de todas las secciones, CSV y respaldo del proyecto en JSON.
 
-## Alcance
-Flujo permanente uniforme en canales prismáticos. La pendiente de energía se aproxima por la pendiente longitudinal. El borde libre y los límites de velocidad son criterios ingresados por el usuario, no valores normativos automáticos. No se modelan remansos, transiciones, captaciones laterales, transporte de sedimentos, erosión ni estabilidad estructural. La verificación de capacidad y velocidad no constituye una aprobación integral del diseño. Manning es empírico; en canales pequeños debe revisarse su aplicabilidad según rugosidad y régimen de flujo.
+Los proyectos existentes de v1 se abren sin perder sus parámetros. Se les añade una malla inicial de 0 a 100 m, intervalo de 10 m y cota inicial 0 m; estos valores son editables y deben reemplazarse con los del proyecto.
+
+## Cálculo y herencia
+- Unidades SI, progresivas en metros, formato km+mmm.mm.
+- Secciones en inicio/fin, intervalo nominal, puntos del terreno y quiebres del alineamiento. Máximo 1000 secciones.
+- Terreno interpolado linealmente, sin extrapolación.
+- Fondo continuo: cota inicial menos la integral de las pendientes por tramo; descenso positivo.
+- Manning, tirante crítico, velocidad, Froude y capacidad con borde libre por sección de flujo uniforme local.
+- En quiebres se usa la pendiente del tramo siguiente; en el extremo final, la anterior.
+- Cambiar la típica modifica solo campos heredados. Los ajustes locales permanecen hasta restaurarlos.
+- Los ajustes que quedan fuera de una malla modificada se conservan, se señalan y pueden limpiarse explícitamente.
+- Rectas y curvas circulares en planta mediante integración de la tangente: azimut desde el norte en sentido horario. No incluye clotoides, transformación geodésica ni validación hidráulica de curvas.
+
+## Persistencia y acceso
+El código está en este repositorio privado; los proyectos se guardan en D1 con la vinculación DB y se autorizan por usuario autenticado en Sites. Se mantiene control de revisión para evitar sobrescribir cambios concurrentes. El esquema existente conserva el proyecto completo en payload JSON, sin migración de tablas adicional para v2. El cuerpo de cada proyecto se limita a 750 kB.
 
 ## Desarrollo
-Node 22.13 o superior. Ejecutar npm ci, npm run db:generate cuando se cambie el esquema y npm run dev. Las instrucciones de ejecución del starter están en scripts/. La base D1 usa la vinculación DB; las migraciones están en drizzle/. La autenticación privada la provee Sites.
-Pruebas: node tests/hydraulics.test.mjs.
-Producción: npm run build; publicar mediante el flujo de Sites conservando .openai/hosting.json. El repositorio privado conserva el código; los registros de diseños están en la base de datos en línea, no en GitHub.
+Node 22.13 o superior. npm ci; npm run dev; npm run build.
+Cuando cambie el esquema: npm run db:generate. Las migraciones están en drizzle/.
+Pruebas: node tests/hydraulics.test.mjs y node tests/project.test.mjs.
+La publicación usa el flujo de Sites y conserva .openai/hosting.json.
+
+## Alcance
+Canal prismático por sección, flujo permanente uniforme local; pendiente de energía aproximada por la rasante. Las cotas de agua NO son una solución de remanso. No se incluyen transiciones hidráulicas/geométricas entre secciones, sobreelevación en curvas, pérdidas locales, captaciones laterales, erosión, sedimentos, excavaciones ni estabilidad estructural. El material no asigna automáticamente rugosidades ni criterios de velocidad. Los criterios son definidos por el usuario; el cumplimiento no implica aprobación integral.
 
 ## Referencias
 - USACE HEC-RAS, Uniform Flow Computations: https://www.hec.usace.army.mil/confluence/rasdocs/ras1dtechref/6.6/stable-channel-design-functions/uniform-flow-computations
-- USBR, Water Measurement Manual, capítulo 2, sección 11: https://www.usbr.gov/tsc/techreferences/mands/wmm/chap02_11.html
+- USBR, Water Measurement Manual, cap. 2, sección 11: https://www.usbr.gov/tsc/techreferences/mands/wmm/chap02_11.html

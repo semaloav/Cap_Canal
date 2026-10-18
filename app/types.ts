@@ -1,0 +1,7 @@
+import {calculate} from "../lib/hydraulics.mjs";
+export type Basic={name:string;project:string;author:string;location:string;section:string;q:number;b:number;z:number;n:number;s:number;height:number;freeboard:number;vmin:number;vmax:number;notes:string};
+export type Patch=Partial<Pick<Basic,"section"|"q"|"b"|"z"|"n"|"height"|"freeboard"|"vmin"|"vmax"|"notes"> & {material:string}>;
+export type Project=Basic & {schemaVersion:number;material:string;materialNotes:string;datum:string;start:number;end:number;step:number;startInvert:number;profile:{station:number;ground:number}[];grades:{end:number;slope:number}[];overrides:Record<string,Patch>;planEnabled:boolean;easting:number;northing:number;azimuth:number;crs:string;plan:{end:number;type:string;radius:number;turn:string}[]};
+export type Saved={id:string;design:Project;revision:number;updatedAt?:string};
+export type Hydro=ReturnType<typeof calculate>;
+export type SectionRow={station:number;key:string;custom:boolean;section:Project;r:Hydro;invert:number;slope:number;ground:number|null;water:number;crown:number;groundMinusInvert:number|null;plan:{easting:number;northing:number;azimuth:number}|null};
