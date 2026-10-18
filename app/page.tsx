@@ -1,4 +1,4 @@
 import CanalApp from "./canal-app";
-import { requireChatGPTUser } from "./chatgpt-auth";
+import { getChatGPTUser } from "./chatgpt-auth";
 export const dynamic="force-dynamic";
-export default async function Page(){await requireChatGPTUser("/");return <CanalApp/>;}
+export default async function Page(){const user=await getChatGPTUser();return <CanalApp guest={!user}/>;}

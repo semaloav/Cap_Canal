@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import {newProject} from "../lib/project.mjs";
+import {GUEST_KEY,readGuestProjects,saveGuestProject,deleteGuestProject} from "../lib/guest-projects.mjs";
+const map=new Map(),storage={getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,v)};
+assert.deepEqual(readGuestProjects(storage),[]);
+const draft={id:crypto.randomUUID(),revision:0,design:newProject()};
+const saved=saveGuestProject(storage,draft);assert.equal(saved.revision,1);assert.equal(readGuestProjects(storage).length,1);
+const updated=saveGuestProject(storage,{...saved,design:{...saved.design,name:"Proyecto visitante"}});assert.equal(updated.revision,2);
+assert.throws(()=>saveGuestProject(storage,saved));assert.throws(()=>deleteGuestProject(storage,saved));
+deleteGuestProject(storage,updated);assert.equal(readGuestProjects(storage).length,0);
+map.set(GUEST_KEY,"contenido dañado");assert.throws(()=>saveGuestProject(storage,draft));assert.equal(map.get(GUEST_KEY),"contenido dañado");
+assert.throws(()=>saveGuestProject({getItem:()=>null,setItem:()=>{throw Error("Sin espacio");}},draft));
+console.log("Visitantes: guardado local, lectura, edición, concurrencia, eliminación y protección de datos dañados: OK.");

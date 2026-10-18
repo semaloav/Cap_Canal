@@ -43,3 +43,6 @@ La evaluación hidráulica local es opcional, con tirantes aguas arriba/abajo y 
 El respaldo JSON v3 incorpora barrajes y admite importación de v1/v2/v3. Sin migración de tablas: se conserva todo en payload.
 Pruebas adicionales: node tests/barriers.test.mjs.
 Referencias del elemento: https://www.usbr.gov/tsc/techreferences/mands/wmm/chap02_09.html y https://www.usbr.gov/tsc/techreferences/mands/wmm/chap09_05.html.
+
+## Acceso público sin registro
+Cualquier persona con el enlace puede calcular y exportar sin una cuenta. Los visitantes guardan proyectos en el navegador (localStorage), con control de revisión entre pestañas. El respaldo JSON permite moverlos entre equipos; no se sincronizan automáticamente. Los usuarios que inician sesión mantienen su espacio privado en línea. Las rutas API de proyectos siguen exigiendo autenticación y comprueban el propietario en cada operación. Los proyectos existentes no se publican. Pruebas: node tests/guest-projects.test.mjs.
