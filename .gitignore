@@ -12,3 +12,4 @@ dist/
 *-pid.json
 
 pages-dist/
+.qa-gvf/

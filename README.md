@@ -49,3 +49,11 @@ Cualquier persona con el enlace puede calcular y exportar sin una cuenta. Los vi
 
 ## Publicación en GitHub Pages
 La versión estática se compila con `npm run build:pages` y se publica desde `.github/workflows/pages.yml`. Funciona sin servidor, cuenta ni inicio de sesión. Los diseños se guardan exclusivamente en el navegador y se transfieren mediante JSON; los datos privados del alojamiento anterior no se incluyen ni se sincronizan. La URL prevista es https://semaloav.github.io/Cap_Canal/ y solo se considera publicada tras finalizar correctamente el trabajo deploy. El repositorio debe tener Pages configurado con Source = GitHub Actions. El workflow intenta habilitarlo; si GitHub exige permisos administrativos, se debe activar en Settings → Pages.
+
+## Flujo gradualmente variado (FGV)
+
+La cuarta pestaña calcula el perfil permanente 1D por paso estándar. Define régimen, contorno e intervalo; las pérdidas usan Manning y coeficientes de contracción/expansión. Los barrajes son controles internos en la rama subcrítica: se invierte su ley de descarga con el nivel aguas abajo calculado, incluyendo rebose y orificio, y corrección empírica de Villemonte para rebose sumergido. El espesor se conserva como geometría de lámina, sin fricción interior.
+
+Requiere caudal constante y una sola familia de sección; no resuelve saltos/régimen mixto, aportes laterales ni derrames. Una incompatibilidad detiene el cálculo y deja los nodos pendientes sin resultados. Geometría y n se interpolan linealmente entre nodos durante los subpasos adaptativos. La tolerancia es numérica, no una estimación de exactitud física. Validar Cd, condiciones de contorno y sensibilidad al intervalo para cada diseño.
+
+`node tests/gvf.test.mjs` contrasta flujo uniforme en 3 geometrías y 2 regímenes, balance de energía, integración RK4 independiente, refinamiento de malla, orificio analítico y fallos explícitos. El CSV y el anexo incluyen las iteraciones FGV. Los respaldos v1–v3 migran a v4.

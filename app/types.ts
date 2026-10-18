@@ -2,7 +2,11 @@ export type Barrier={id:string;name:string;station:number;mode:"crest"|"underflo
 import {calculate} from "../lib/hydraulics.mjs";
 export type Basic={name:string;project:string;author:string;location:string;section:string;q:number;b:number;z:number;n:number;s:number;height:number;freeboard:number;vmin:number;vmax:number;notes:string};
 export type Patch=Partial<Pick<Basic,"section"|"q"|"b"|"z"|"n"|"height"|"freeboard"|"vmin"|"vmax"|"notes"> & {material:string}>;
-export type Project=Basic & {schemaVersion:number;barriers:Barrier[];material:string;materialNotes:string;datum:string;start:number;end:number;step:number;startInvert:number;profile:{station:number;ground:number}[];grades:{end:number;slope:number}[];overrides:Record<string,Patch>;planEnabled:boolean;easting:number;northing:number;azimuth:number;crs:string;plan:{end:number;type:string;radius:number;turn:string}[]};
+export type GVFConfig={regime:string;boundary:string;depth:number;stage:number;energySlope:number;contraction:number;expansion:number;tolerance:number};
+export type Project=Basic & {schemaVersion:number;gvf:GVFConfig;barriers:Barrier[];material:string;materialNotes:string;datum:string;start:number;end:number;step:number;startInvert:number;profile:{station:number;ground:number}[];grades:{end:number;slope:number}[];overrides:Record<string,Patch>;planEnabled:boolean;easting:number;northing:number;azimuth:number;crs:string;plan:{end:number;type:string;radius:number;turn:string}[]};
 export type Saved={id:string;design:Project;revision:number;updatedAt?:string};
 export type Hydro=ReturnType<typeof calculate>;
 export type SectionRow={station:number;barriers:Barrier[];key:string;custom:boolean;section:Project;r:Hydro;invert:number;slope:number;ground:number|null;water:number;crown:number;groundMinusInvert:number|null;plan:{easting:number;northing:number;azimuth:number}|null};
+export type GVFState={y:number;water:number;egl:number;v:number;vhead:number;fr:number;sf:number;area:number;remaining:number;iterations:number;residual:number;substeps:number;control?:{name:string;total:number;over:number;under:number;qResidual:number;submerged:boolean}};
+export type GVFRow=SectionRow & {side:string;state:GVFState|null;status:string;dx:number|null;hf:number|null;hl:number|null};
+export type GVFSolution={rows:GVFRow[];warnings:string[];error:string;complete:boolean};

@@ -33,7 +33,7 @@ export function BarrierResults({a,section}:{a:Barrier;section:Project}){
  const v=barrierRating(a,section);if(!a.analysis)return null;
  return <div className="barrier-evaluation"><div className="barrier-regime"><Waves size={16}/>{v.regime}</div>
  <div className="barrier-metrics">{[["Rebose por cresta",v.over,"m³/s"],["Paso inferior",v.under,"m³/s"],["Total evaluado",v.total,"m³/s"],["Carga sobre cresta",v.crestHead,"m"]].map(([k,n,u])=><div key={String(k)}><small>{k}</small><strong>{fmt(n as number|null,5)} <em>{u}</em></strong></div>)}</div>
- {v.total!==null&&<p className="hint">Caudal de diseño en esta progresiva: {fmt(section.q,5)} m³/s. Diferencia Q evaluado − Q diseño: {fmt(v.total-section.q,5)} m³/s. No se resuelve automáticamente el nivel necesario para conducir Q.</p>}
+ {v.total!==null&&<p className="hint">Caudal de diseño en esta progresiva: {fmt(section.q,5)} m³/s. Diferencia Q evaluado − Q diseño: {fmt(v.total-section.q,5)} m³/s. El nivel necesario para conducir Q se resuelve en Perfil FGV.</p>}
  {v.warnings.map(w=><div className="barrier-warning" key={w}><AlertTriangle size={13}/><span>{w}</span></div>)}
  </div>;
 }
@@ -51,14 +51,15 @@ export default function BarrierEditor({d,onChange}:{d:Project;onChange:(barriers
  <StationInput value={a.station} label="Ubicación por progresiva" onChange={v=>edit(a.id,{station:v})}/>
  <label className="field"><span>Configuración de la lámina</span><select value={a.mode} onChange={e=>edit(a.id,{mode:e.target.value as Barrier["mode"],opening:e.target.value==="crest"?0:Math.min(.1,a.crest*.3)})}><option value="crest">Apoyada en el fondo · rebose por cresta</option><option value="underflow">Levantada · abertura inferior</option></select></label>
  <div className="two-cols"><NumberInput label="Espesor · t" unit="m" value={a.thickness} onChange={v=>edit(a.id,{thickness:v})}/><NumberInput label="Altura de cresta · P" unit="m sobre fondo" value={a.crest} onChange={v=>edit(a.id,{crest:v})}/>{a.mode==="underflow"&&<NumberInput label="Abertura inferior · a" unit="m sobre fondo" value={a.opening} onChange={v=>edit(a.id,{opening:v})}/>}</div>
+ <div className="two-cols"><NumberInput label="Cd de rebose (FGV y local)" value={a.cdWeir} onChange={v=>edit(a.id,{cdWeir:v})}/>{a.mode==="underflow"&&<NumberInput label="Cd de orificio (FGV y local)" value={a.cdOrifice} onChange={v=>edit(a.id,{cdOrifice:v})}/>}</div>
  <label className="field"><span>Observaciones de la lámina</span><textarea rows={2} maxLength={2000} value={a.notes} onChange={e=>edit(a.id,{notes:e.target.value})}/></label>
  </div><div className="barrier-visual"><BarrierDiagram a={a} section={local} invert={invert}/><div className="small-note">Si la lámina deja una abertura y el agua supera su cresta, puede haber rebose y paso inferior simultáneamente. Ambos se representan en el análisis local.</div></div></div>
  <div className="barrier-analysis"><label className="analysis-switch"><input type="checkbox" checked={a.analysis} onChange={e=>edit(a.id,{analysis:e.target.checked})}/><strong>Evaluación hidráulica local con niveles ingresados</strong><span>Opcional</span></label>
- {a.analysis&&<><div className="barrier-analysis-inputs"><NumberInput label="Tirante aguas arriba · y₁" unit="m sobre fondo local" value={a.upstream} onChange={v=>edit(a.id,{upstream:v})}/><NumberInput label="Tirante aguas abajo · y₂" unit="m sobre fondo local" value={a.downstream} onChange={v=>edit(a.id,{downstream:v})}/><NumberInput label="Coeficiente de rebose · Cdᵥ" unit="adimensional" value={a.cdWeir} onChange={v=>edit(a.id,{cdWeir:v})}/>{a.mode==="underflow"&&<NumberInput label="Coeficiente del orificio · Cdₒ" unit="adimensional" value={a.cdOrifice} onChange={v=>edit(a.id,{cdOrifice:v})}/>}</div>
+ {a.analysis&&<><div className="barrier-analysis-inputs"><NumberInput label="Tirante manual aguas arriba" unit="m" value={a.upstream} onChange={v=>edit(a.id,{upstream:v})}/><NumberInput label="Tirante manual aguas abajo" unit="m" value={a.downstream} onChange={v=>edit(a.id,{downstream:v})}/></div>
  <p className="hint">Coeficientes iniciales de ejemplo: deben elegirse o calibrarse para la geometría, el borde y las condiciones de descarga. Se desprecia la velocidad de aproximación. El espesor se conserva geométricamente; no se calcula una corrección por cresta gruesa.</p>
  {[a.upstream,a.downstream,a.crest,a.opening,a.cdWeir,a.cdOrifice].every(Number.isFinite)&&<BarrierResults a={a} section={local}/>}
  </>}
- <p className="barrier-scope">Este elemento no modifica automáticamente el perfil de agua del canal ni calcula remanso. La lámina, los niveles ingresados y la evaluación local se incluyen en el anexo.</p>
+ <p className="barrier-scope">Este barraje modifica el nivel de agua en Perfil FGV. Se calcula el nivel aguas arriba a partir del caudal y del nivel aguas abajo del perfil. La evaluación manual opcional es una comprobación independiente y sus niveles no alimentan FGV.</p>
  </div></article>;
  })}
  </section>;
