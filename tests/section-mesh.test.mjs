@@ -1,0 +1,57 @@
+import assert from "node:assert/strict";
+import {newProject,validateProject,buildFGVSections,buildSections,stationLabel} from "../lib/project.mjs";
+import {sectionMesh,regularStations,meshSummary} from "../lib/section-mesh.mjs";
+import {newBarrier} from "../lib/barriers.mjs";
+import {solveGVF} from "../lib/gvf.mjs";
+const close=(a,b,t=1e-6)=>assert.ok(Math.abs(a-b)<t,`${a} != ${b}`);
+const plate={...newBarrier(52),mode:"underflow",opening:.1,crest:1.5,thickness:.2};
+const d=newProject({section:"rectangular",q:.2,b:1,height:2,n:.015,s:.001,step:20,gvf:{interval:15,depth:.7},grades:[{end:35,slope:.0005},{end:70,slope:.001},{end:100,slope:.002}],barriers:[plate]});
+const mesh=sectionMesh(d,true),summary=meshSummary(mesh);
+assert.deepEqual(regularStations(d),[0,20,40,60,80,100]);
+assert.deepEqual([summary.base,summary.fgvAdded,summary.gradeAdded,summary.barrierAdded,summary.total],[6,5,2,2,15]);
+assert.deepEqual(mesh.filter(r=>r.origins.includes("grade")).map(r=>r.station),[35,70]);
+assert.deepEqual(mesh.filter(r=>r.origins.includes("barrierUp")||r.origins.includes("barrierDown")).map(r=>r.station),[52,52.2]);
+const coarse=sectionMesh({...d,gvf:{...d.gvf,interval:30}},true);
+for(const s of regularStations(d))assert.ok(coarse.some(r=>r.station===s&&r.origins.includes("base")));
+assert.equal(coarse.length,12);assert.equal(buildSections(d).length,10);
+const coincident=sectionMesh({...d,barriers:[{...plate,station:40}]},true);
+assert.equal(meshSummary(coincident).barrierAdded,1);
+assert.deepEqual(coincident.find(r=>r.station===40).origins,["base","barrierUp"]);
+assert.equal(new Set(coincident.map(r=>r.station)).size,coincident.length);
+const corners=sectionMesh({...d,grades:[{end:40,slope:.0005},{end:70,slope:.001},{end:100,slope:.002}]},true);
+assert.equal(meshSummary(corners).gradeBreaks,2);assert.equal(meshSummary(corners).gradeAdded,1);
+const variable=newProject({...d,barriers:[],grades:[{end:100,slope:.001}],overrides:{"40":{b:.8}},gvf:{...d.gvf,interval:10}});
+close(buildFGVSections(variable).find(r=>r.station===30).section.b,.9);
+const finer={...variable,gvf:{...variable.gvf,interval:5}};
+close(buildFGVSections(finer).find(r=>r.station===30).section.b,.9);
+close(buildFGVSections(finer).find(r=>r.station===40).section.b,.8);
+const withElement=buildFGVSections({...variable,barriers:[{...plate,station:52}]});
+close(withElement.find(r=>r.station===52).section.b,.92);
+close(withElement.find(r=>r.station===30).section.b,.9);
+assert.equal(variable.step,finer.step);assert.deepEqual(variable.overrides,finer.overrides);
+const solved=solveGVF(d);assert.equal(solved.error,"");assert.equal(solved.rows.length,15);
+for(let i=0;i<solved.rows.length-1;i++){
+ const up=solved.rows[i],down=solved.rows[i+1];
+ close(up.dx,down.station-up.station);
+ close(up.bedSlope,(up.invert-down.invert)/(down.station-up.station));
+ close(up.state.egl-down.state.egl,up.hf+up.hl);
+ if(!up.state.control)assert.ok(![35,70].some(s=>s>up.station&&s<down.station));
+}
+assert.equal(solved.rows.find(r=>r.station===35).slopeBefore,.0005);
+assert.equal(solved.rows.find(r=>r.station===35).slopeAfter,.001);
+const failed=solveGVF({...d,gvf:{...d.gvf,depth:.001}});assert.equal(failed.rows.length,15);assert.ok(failed.rows.every(r=>r.state===null));
+const interior=solveGVF({...d,step:10,barriers:[{...plate,station:49.99,thickness:.02}],gvf:{...d.gvf,interval:10}});
+assert.equal(interior.error,"");const kept=interior.rows.find(r=>r.station===50);assert.ok(kept.origins.includes("base"));assert.equal(kept.state,null);assert.match(kept.status,/Interior/);
+const old={...d,schemaVersion:4,gvf:{depth:.7}};
+const migrated=validateProject(old);assert.equal(migrated.gvf.interval,20);assert.equal(migrated.schemaVersion,5);
+assert.throws(()=>validateProject({...d,gvf:{...d.gvf,interval:0}}));
+assert.throws(()=>validateProject({...d,barriers:[{...plate,thickness:1e-8}]}));
+assert.equal(stationLabel(50.005,6),"0+050.005000");
+const adaptive=solveGVF(newProject({section:"rectangular",b:1,q:.2,n:.015,height:3,s:.0001,end:10,step:10,grades:[{end:10,slope:.0001}],gvf:{interval:10,regime:"supercritical",depth:.03,contraction:0,expansion:0}}));
+assert.equal(adaptive.error,"");assert.deepEqual(adaptive.rows.map(r=>r.station),[0,2.5,5,10]);
+assert.equal(meshSummary(adaptive.rows).base,2);assert.equal(meshSummary(adaptive.rows).adaptiveAdded,2);
+for(let i=1;i<adaptive.rows.length;i++){
+ const up=adaptive.rows[i-1],down=adaptive.rows[i];close(down.dx,down.station-up.station);
+ close(up.state.egl-down.state.egl,down.hf+down.hl);assert.ok(down.state.residual<=1e-7);
+}
+console.log("Malla: base obligatoria, X independiente, caras físicas, pendientes, coincidencias, geometría heredada, fallo sin pérdida de nodos e interior de lámina: OK");

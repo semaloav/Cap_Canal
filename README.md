@@ -5,7 +5,7 @@ Aplicación web privada para diseñar un canal completo por progresivas, mantene
 1. **Proyecto y perfil:** identificación, material/revestimiento, progresivas inicial/final, intervalo, referencia de cotas y perfil del terreno editable o pegado desde Excel.
 2. **Alineamiento:** cota de fondo inicial y rasante continua por tramos; geometría opcional en planta con rectas y curvas circulares tangentes (coordenadas iniciales y azimut).
 3. **Sección típica y barrajes:** geometría rectangular, trapezoidal o triangular, caudal, Manning, dimensiones, borde libre y límites de velocidad.
-4. **Secciones:** malla por progresivas con la típica aplicada; edición de parámetros por celda, materiales/observaciones en Detalle, restauración a la típica, cotas y resultados por sección.
+4. **Perfil FGV:** secciones base obligatorias, intervalo X independiente, caras de barrajes y cambios de pendiente. Tabla con procedencia, cotas, pérdidas e iteraciones. La geometría base sigue editable en el panel desplegable.
 5. **Exportar anexo:** memoria completa imprimible en PDF (A4 horizontal), tablas de todas las secciones, CSV y respaldo del proyecto en JSON.
 
 Los proyectos existentes de v1 se abren sin perder sus parámetros. Se les añade una malla inicial de 0 a 100 m, intervalo de 10 m y cota inicial 0 m; estos valores son editables y deben reemplazarse con los del proyecto.
@@ -40,7 +40,7 @@ El perfil principal se resuelve por FGV permanente 1D y paso estándar, con caud
 ## Barrajes de lámina
 En la pestaña Sección típica se pueden añadir hasta 20 láminas por progresiva, definidas por espesor longitudinal, cresta sobre el fondo y abertura inferior opcional. La progresiva identifica la cara aguas arriba. Cada barraje se incorpora a la malla de secciones, al perfil, al CSV y al anexo completo. Se permiten configuraciones apoyada en el fondo para rebose o levantada para paso inferior; si se supera la cresta pueden ocurrir ambos pasos.
 La comprobación hidráulica manual es opcional y no alimenta FGV. Sus tirantes son ingresados por el usuario. Los coeficientes Cd se comparten con el motor FGV y sus valores iniciales son ejemplos que requieren calibración. Se usa integración hidrostática por franjas: rebose y orificio con entrada cubierta. Para orificio rectangular sumergido, Q=Cd*A*sqrt(2*g*(y1-y2)); la generalización a ancho variable requiere calibración. Se omiten velocidad de aproximación, flujo inverso y corrección por cresta gruesa. El motor FGV sí modifica el perfil e incluye interacción entre estructuras y corrección empírica de Villemonte para rebose sumergido; la comprobación manual solo admite rebose libre.
-El respaldo JSON v4 incorpora la configuración FGV y admite importación de v1/v2/v3/v4. Sin migración de tablas: se conserva todo en payload.
+El respaldo JSON v5 separa el intervalo X de FGV del intervalo de secciones base y admite importación de v1/v2/v3/v4/v5. Al abrir versiones anteriores, X toma el intervalo base guardado. Sin migración de tablas: se conserva todo en payload.
 Pruebas adicionales: node tests/barriers.test.mjs.
 Referencias del elemento: https://www.usbr.gov/tsc/techreferences/mands/wmm/chap02_09.html y https://www.usbr.gov/tsc/techreferences/mands/wmm/chap09_05.html.
 
@@ -56,4 +56,12 @@ La cuarta pestaña calcula el perfil permanente 1D por paso estándar. Define r�
 
 Requiere caudal constante y una sola familia de sección; no resuelve saltos/régimen mixto, aportes laterales ni derrames. Una incompatibilidad detiene el cálculo y deja los nodos pendientes sin resultados. Geometría y n se interpolan linealmente entre nodos durante los subpasos adaptativos. La tolerancia es numérica, no una estimación de exactitud física. Validar Cd, condiciones de contorno y sensibilidad al intervalo para cada diseño.
 
-`node tests/gvf.test.mjs` contrasta flujo uniforme en 3 geometrías y 2 regímenes, balance de energía, integración RK4 independiente, refinamiento de malla, orificio analítico y fallos explícitos. El CSV y el anexo incluyen las iteraciones FGV. Los respaldos v1–v3 migran a v4.
+`node tests/gvf.test.mjs` contrasta flujo uniforme en 3 geometrías y 2 regímenes, balance de energía, integración RK4 independiente, refinamiento de malla, orificio analítico y fallos explícitos. El CSV y el anexo incluyen las iteraciones FGV. Los respaldos v1–v4 migran a v5.
+
+### Generación y conservación de secciones
+
+Primero se generan todas las secciones base, incluidos los extremos, por número o separación. Después se añaden los puntos del intervalo X de FGV, los quiebres de pendiente y las caras de cada barraje (progresiva y progresiva + espesor). Los puntos de terreno y planta también se conservan. Las coincidencias comparten una sección física con todas sus etiquetas; cada fila declara su origen y el resumen desglosa las adiciones sin contarlas dos veces. Cambiar X conserva las secciones base y sus ajustes geométricos.
+
+El paso estándar usa la distancia real entre nodos y las cotas de rasante integradas por tramo. Ningún paso FGV atraviesa un cambio de pendiente sin un nodo en él. Los subpasos adaptativos aceptados se exportan como secciones adicionales con sus propios resultados. La malla se presenta aun si el perfil no converge. Si un punto base/X cae dentro de la lámina, permanece identificado sin aplicarle FGV de canal abierto: la ley del barraje enlaza sus caras. El orificio y el rebose usan niveles referidos al fondo aguas arriba, por lo que la cota aguas abajo incorpora la caída de rasante a través del espesor.
+
+`node tests/section-mesh.test.mjs` verifica conteos, independencia de X, coincidencias, preservación de geometría, caras físicas, quiebres, refinamiento visible y balance de energía de cada paso real.
