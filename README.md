@@ -31,7 +31,7 @@ Pruebas: node tests/hydraulics.test.mjs y node tests/project.test.mjs.
 La publicación usa el flujo de Sites y conserva .openai/hosting.json.
 
 ## Alcance
-Canal prismático por sección, flujo permanente uniforme local; pendiente de energía aproximada por la rasante. Las cotas de agua NO son una solución de remanso. No se incluyen transiciones hidráulicas/geométricas entre secciones, sobreelevación en curvas, pérdidas locales, captaciones laterales, erosión, sedimentos, excavaciones ni estabilidad estructural. El material no asigna automáticamente rugosidades ni criterios de velocidad. Los criterios son definidos por el usuario; el cumplimiento no implica aprobación integral.
+El perfil principal se resuelve por FGV permanente 1D y paso estándar, con caudal constante y una rama subcrítica o supercrítica. La evaluación uniforme local se conserva como referencia para la típica. No se incluyen saltos hidráulicos/régimen mixto, sobreelevación en curvas, captaciones laterales, derrames, erosión, sedimentos, excavaciones ni estabilidad estructural. El material no asigna automáticamente rugosidades ni criterios de velocidad. Los criterios son definidos por el usuario; el cumplimiento no implica aprobación integral. Ver el apartado FGV para el método, contornos y límites.
 
 ## Referencias
 - USACE HEC-RAS, Uniform Flow Computations: https://www.hec.usace.army.mil/confluence/rasdocs/ras1dtechref/6.6/stable-channel-design-functions/uniform-flow-computations
@@ -39,8 +39,8 @@ Canal prismático por sección, flujo permanente uniforme local; pendiente de en
 
 ## Barrajes de lámina
 En la pestaña Sección típica se pueden añadir hasta 20 láminas por progresiva, definidas por espesor longitudinal, cresta sobre el fondo y abertura inferior opcional. La progresiva identifica la cara aguas arriba. Cada barraje se incorpora a la malla de secciones, al perfil, al CSV y al anexo completo. Se permiten configuraciones apoyada en el fondo para rebose o levantada para paso inferior; si se supera la cresta pueden ocurrir ambos pasos.
-La evaluación hidráulica local es opcional, con tirantes aguas arriba/abajo y coeficientes Cd ingresados por el usuario. Los valores iniciales son de ejemplo y no constituyen selección normativa. Se usa integración hidrostática por franjas: rebose libre y orificio con entrada cubierta. Para orificio rectangular sumergido, Q=Cd*A*sqrt(2*g*(y1-y2)); la generalización a ancho variable requiere calibración. Se omiten velocidad de aproximación, rebose sumergido, flujo inverso, corrección por cresta gruesa e interacción entre estructuras. No se modifica el perfil de agua ni se resuelve remanso.
-El respaldo JSON v3 incorpora barrajes y admite importación de v1/v2/v3. Sin migración de tablas: se conserva todo en payload.
+La comprobación hidráulica manual es opcional y no alimenta FGV. Sus tirantes son ingresados por el usuario. Los coeficientes Cd se comparten con el motor FGV y sus valores iniciales son ejemplos que requieren calibración. Se usa integración hidrostática por franjas: rebose y orificio con entrada cubierta. Para orificio rectangular sumergido, Q=Cd*A*sqrt(2*g*(y1-y2)); la generalización a ancho variable requiere calibración. Se omiten velocidad de aproximación, flujo inverso y corrección por cresta gruesa. El motor FGV sí modifica el perfil e incluye interacción entre estructuras y corrección empírica de Villemonte para rebose sumergido; la comprobación manual solo admite rebose libre.
+El respaldo JSON v4 incorpora la configuración FGV y admite importación de v1/v2/v3/v4. Sin migración de tablas: se conserva todo en payload.
 Pruebas adicionales: node tests/barriers.test.mjs.
 Referencias del elemento: https://www.usbr.gov/tsc/techreferences/mands/wmm/chap02_09.html y https://www.usbr.gov/tsc/techreferences/mands/wmm/chap09_05.html.
 
