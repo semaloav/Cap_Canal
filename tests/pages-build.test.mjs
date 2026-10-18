@@ -1,0 +1,11 @@
+import fs from "node:fs";
+import path from "node:path";
+import assert from "node:assert/strict";
+const root=path.resolve("pages-dist"),html=fs.readFileSync(path.join(root,"index.html"),"utf8");
+assert.ok(html.includes("Cap_Canal"));
+const assets=[...html.matchAll(/(?:src|href)="(\/Cap_Canal\/[^\"]+)"/g)].map(m=>m[1]);
+assert.ok(assets.some(p=>p.endsWith(".js")));assert.ok(assets.some(p=>p.endsWith(".css")));
+for(const asset of assets)assert.ok(fs.existsSync(path.join(root,asset.replace("/Cap_Canal/",""))),asset);
+for(const forbidden of ["server",".openai","db","drizzle"])assert.ok(!fs.existsSync(path.join(root,forbidden)),forbidden);
+assert.ok(!html.includes("chatgpt.site"));
+console.log("GitHub Pages: entrada estática, rutas de assets y ausencia de servidor/datos privados: OK.");

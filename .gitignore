@@ -10,3 +10,5 @@ dist/
 .vinext/
 *.tsbuildinfo
 *-pid.json
+
+pages-dist/

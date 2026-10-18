@@ -46,3 +46,6 @@ Referencias del elemento: https://www.usbr.gov/tsc/techreferences/mands/wmm/chap
 
 ## Acceso público sin registro
 Cualquier persona con el enlace puede calcular y exportar sin una cuenta. Los visitantes guardan proyectos en el navegador (localStorage), con control de revisión entre pestañas. El respaldo JSON permite moverlos entre equipos; no se sincronizan automáticamente. Los usuarios que inician sesión mantienen su espacio privado en línea. Las rutas API de proyectos siguen exigiendo autenticación y comprueban el propietario en cada operación. Los proyectos existentes no se publican. Pruebas: node tests/guest-projects.test.mjs.
+
+## Publicación en GitHub Pages
+La versión estática se compila con `npm run build:pages` y se publica desde `.github/workflows/pages.yml`. Funciona sin servidor, cuenta ni inicio de sesión. Los diseños se guardan exclusivamente en el navegador y se transfieren mediante JSON; los datos privados del alojamiento anterior no se incluyen ni se sincronizan. La URL prevista es https://semaloav.github.io/Cap_Canal/ y solo se considera publicada tras finalizar correctamente el trabajo deploy. El repositorio debe tener Pages configurado con Source = GitHub Actions. El workflow intenta habilitarlo; si GitHub exige permisos administrativos, se debe activar en Settings → Pages.

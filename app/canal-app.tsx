@@ -17,7 +17,7 @@ function CellInput({value,onCommit,label,changed,disabled}:{value:number;onCommi
  function commit(){const v=Number(text.replace(",","."));if(text.trim()&&Number.isFinite(v)&&v!==value)onCommit(v);setText(String(value));setFocus(false);}
  return <input className={changed?"cell-input modified":"cell-input"} aria-label={label} type="text" inputMode="decimal" disabled={disabled} value={text} onFocus={()=>setFocus(true)} onChange={e=>setText(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();if(e.key==="Escape"){setText(String(value));e.currentTarget.blur();}}}/>;
 }
-export default function CanalApp({guest=false}:{guest?:boolean}){
+export default function CanalApp({guest=false,standalone=false}:{guest?:boolean;standalone?:boolean}){
  const [current,setCurrent]=useState<Saved|null>(null),[records,setRecords]=useState<Saved[]>([]),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[dirty,setDirty]=useState(false),[message,setMessage]=useState(""),[error,setError]=useState(""),[search,setSearch]=useState(""),[tab,setTab]=useState("project"),[profileText,setProfileText]=useState(""),[page,setPage]=useState(0),[selected,setSelected]=useState<string|null>(null),[date,setDate]=useState("");
  useEffect(()=>{setCurrent(fresh());load();},[]);
  const d=current?.design??newProject() as Project;
@@ -49,7 +49,7 @@ export default function CanalApp({guest=false}:{guest?:boolean}){
  useEffect(()=>{if(page*50>=rows.length&&page>0)setPage(0);},[rows.length,page]);
  return <div className="shell">
  <aside className="sidebar no-print">
- <a className="brand" href="/"><span className="brand-icon"><Waves size={25}/></span><span>Cap_Canal<small>ESTUDIO HIDRÁULICO</small></span></a>
+ <a className="brand" href={standalone?"./":"/"}><span className="brand-icon"><Waves size={25}/></span><span>Cap_Canal<small>ESTUDIO HIDRÁULICO</small></span></a>
  <div className="workspace-label">PROYECTOS DE CANAL <span>v2</span></div><button className="new-btn" onClick={add} disabled={busy}><Plus size={18}/> Nuevo proyecto</button>
  <div className="list-heading"><span>MIS PROYECTOS <b>{records.length}</b></span><button className="icon-btn" onClick={load} aria-label="Recargar proyectos" disabled={loading||busy}><RefreshCw size={15}/></button></div>
  <label className="search"><Search size={16}/><input aria-label="Buscar proyectos" placeholder="Buscar un proyecto…" value={search} onChange={e=>setSearch(e.target.value)}/></label>
@@ -57,7 +57,7 @@ export default function CanalApp({guest=false}:{guest?:boolean}){
  <div className="sidebar-footer"><span className="online-dot"/> {guest?"Proyectos de este navegador":"Proyectos privados en línea"}<small>Perfil · alineamiento · secciones · anexo</small>{!guest&&<a href="https://github.com/semaloav/Cap_Canal" target="_blank" rel="noreferrer">Código en GitHub <ArrowUpRight size={12}/></a>}</div></aside>
  <main className="workspace"><header className="topbar no-print"><span>Mis proyectos <ChevronRight size={13}/> <b>{d.name||"Sin nombre"}</b></span><span className="save-state">{dirty?<><span className="unsaved-dot"/> Cambios sin guardar</>:current?.revision?<><Check size={14}/>{guest?"Guardado aquí":"Guardado en línea"}</>:"Nuevo proyecto"}</span></header>
  <div className="content v2-content">
- {guest&&<div className="guest-notice no-print"><strong>Acceso libre · sin registro</strong><span>Puedes calcular, guardar en este navegador y exportar anexos. Para llevar tus proyectos a otro equipo, descarga el respaldo JSON.</span><a href="/signin-with-chatgpt?return_to=%2F" target="_top">Entrar a mi espacio privado</a></div>}
+ {guest&&<div className="guest-notice no-print"><strong>Acceso libre · sin registro</strong><span>Puedes calcular, guardar en este navegador y exportar anexos. Para llevar tus proyectos a otro equipo, descarga el respaldo JSON.</span>{!standalone&&<a href="/signin-with-chatgpt?return_to=%2F" target="_top">Entrar a mi espacio privado</a>}</div>}
  <div className="page-heading no-print"><div><div className="eyebrow">DEL PERFIL AL ANEXO · UN SOLO PROYECTO</div><h1>{tabs[tabIndex]?.label}</h1><p>{["Define el proyecto, sus materiales y el perfil del terreno.","Traza la rasante y la geometría del canal por tramos.","Diseña la sección típica y añade barrajes de lámina por progresiva.","Revisa y ajusta la típica replicada a lo largo del canal.","Exporta la memoria y las tablas del proyecto completo."][tabIndex]}</p></div><button className="primary" disabled={!!model.error||busy||!current||(!dirty&&current.revision>0)} onClick={save}><Save size={16}/>{busy?"Procesando…":"Guardar proyecto"}</button></div>
  <nav className="workflow-tabs no-print" aria-label="Etapas del diseño">{tabs.map((t,i)=>{const Icon=t.icon;return <button key={t.id} className={tab===t.id?"current":""} aria-current={tab===t.id?"step":undefined} onClick={()=>{setTab(t.id);if(t.id==="report")setDate(new Date().toLocaleString("es-PE"));}}><span className="tab-number">{i+1}</span><Icon size={16}/><span>{t.label}</span></button>;})}</nav>
  {error&&<div className="notice error no-print" role="alert"><AlertTriangle size={17}/><span>{error}</span><button onClick={()=>setError("")} aria-label="Cerrar"><X size={15}/></button></div>}
