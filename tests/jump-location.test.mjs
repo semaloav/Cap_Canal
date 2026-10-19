@@ -6,6 +6,7 @@ const close=(a,b,t=1e-9)=>assert.ok(Math.abs(a-b)<t,`${a} != ${b}`);
 const d=newProject({section:'rectangular',q:.001,b:.1,n:.01,s:.001,height:.3,freeboard:.01,start:0,end:1,step:.1,grades:[{end:1,slope:.001}],flume:{inlet:{height:.1,width:.1},outlet:{height:.02,width:.1},entry:{station:.01},super:{station:.01,depth:.006,count:10,interval:.1},sub:{count:10,interval:.1},jump:{lengthMethod:'elevatorski',acceptNeglect:true}}});
 const solution=solveFlume(d),j=solution.jump;
 assert.equal(j.complete,true,j.error);assert.ok(j.x3>j.x2);assert.ok(j.loss>0);
+assert.equal(j.matched,true);assert.equal(j.energyChecked,true);assert.equal(j.energyValid,true);assert.equal(j.status,'compatible');
 // Independent rectangular Bélanger expression, not the solver's returned conjugate.
 const fr=d.q/(d.b*j.y2)/Math.sqrt(G*j.y2),target=j.y2*(Math.sqrt(1+8*fr*fr)-1)/2;
 close(j.conjugate,target);close(j.length,6.9*(target-j.y2));close(j.x3,j.x2+j.length);
@@ -33,4 +34,22 @@ const migrated=validateProject(old);assert.equal(migrated.flume.jump.lengthMetho
 assert.equal(newProject().flume.jump.lengthMethod,'elevatorski');
 assert.equal(validateProject(JSON.parse(JSON.stringify(d))).flume.jump.lengthMethod,'elevatorski');
 assert.throws(()=>validateProject({...d,flume:{...d.flume,jump:{...d.flume.jump,lengthMethod:'universal'}}}));
+// Regression: same coverage as the reported warning. A negative trial-energy
+// difference must not be diagnosed as an invalid jump before depth matching.
+const limited=newProject({section:'rectangular',q:.001,b:.1,n:.01,s:.001,height:.3,freeboard:.01,start:0,end:1.5,step:.05,grades:[{end:1.5,slope:.001}],flume:{inlet:{height:.1,width:.1},outlet:{height:.05,width:.1},super:{station:.015,depth:.006,count:20,interval:.05},sub:{count:20,interval:.05},jump:{lengthMethod:'elevatorski',acceptNeglect:true}}});
+const unmatched=solveFlume(limited).jump;
+assert.deepEqual(unmatched.coverage,{superStart:.015,superEnd:.965,subStart:.55,subEnd:1.5});
+assert.ok(unmatched.p2.state.egl-unmatched.p3.state.egl<0);
+assert.ok(unmatched.depthResidual>.03);assert.equal(unmatched.complete,false);
+assert.equal(unmatched.matched,false);assert.equal(unmatched.energyChecked,false);assert.equal(unmatched.energyValid,null);
+assert.equal(unmatched.loss,null);assert.equal(unmatched.status,'depth-mismatch');
+assert.match(unmatched.error,/No se encontró coincidencia/);assert.ok(!unmatched.error.includes('no produce pérdida positiva'));
+assert.ok(unmatched.searchStats.minResidual>0);assert.ok(unmatched.warnings.some(w=>w.includes('hacia aguas arriba')));
+// A real root can be outside the supplied subcritical table. Extending the
+// table restores it; no depth is extrapolated from the limited branch.
+const shallow={...limited,flume:{...limited.flume,outlet:{...limited.flume.outlet,height:.015}}};
+assert.equal(solveFlume(shallow).jump.status,'depth-mismatch');
+const extended=solveFlume({...shallow,flume:{...shallow.flume,sub:{...shallow.flume.sub,count:30}}}).jump;
+assert.equal(extended.complete,true,extended.error);assert.ok(extended.x3<.55);assert.ok(Math.abs(extended.depthResidual)<=1e-6);
+assert.equal(extended.energyChecked,true);assert.equal(extended.energyValid,true);
 console.log('Ubicación P2/P3: conjugado de Bélanger, longitud variable, coincidencia desplazada, extremos FGV, cobertura y migración: OK');

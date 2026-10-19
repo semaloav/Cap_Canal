@@ -79,10 +79,16 @@ No se incluyen aportes laterales, derrames con reducción de Q, sobreelevación 
 
 Selecciona «Calculada · Lj = 6.9 (y conjugado − y2)» para buscar P2 desde aguas arriba. En cada progresiva se obtiene y2 de la curva supercrítica, se calcula el conjugado por cantidad de movimiento y se estima Lj. P3 se ubica en x2 + Lj; el residuo es R(x2) = y_sub(x3) − y_conjugado. No se compara el conjugado con la curva subcrítica en x2. Un cambio de signo permite refinar mediante bisección, con tolerancia absoluta de tirante de 1e−6 m y resolución de progresiva de 1e−6 m.
 
-Las interpolaciones se utilizan para explorar la curva y acotar candidatos. Los extremos aceptados se recalculan con FGV. El gráfico superior siempre superpone ambas curvas por nivel Z+y; las tarjetas muestran progresiva, fondo, tirante, nivel, velocidad y Froude de P2 y P3. Se informa la longitud calculada, diferencia de tirantes, pérdida de energía, caída del fondo y traza de iteraciones. Las parejas no compatibles se identifican como ensayos. El perfil conectado mantiene una interrupción dentro del salto.
+Los puntos entre filas se resuelven con paso estandar FGV. Los extremos aceptados se recalculan en las ramas completas. El gráfico superior siempre superpone ambas curvas por nivel Z+y; las tarjetas muestran progresiva, fondo, tirante, nivel, velocidad y Froude de P2 y P3. Se informa la longitud calculada, diferencia de tirantes, pérdida de energía, caída del fondo y traza de iteraciones. Las parejas no compatibles se identifican como ensayos. El perfil conectado mantiene una interrupción dentro del salto.
 
 Esta opción solo admite sección rectangular prismática, sin barrajes dentro del salto, y requiere declarar justificables la pendiente suficientemente pequeña y el desprecio de peso/fricción. No se aplica automáticamente a otras geometrías. La longitud medida y el balance general anterior permanecen disponibles; los proyectos anteriores conservan ese método. La correlación no sustituye la calibración del modelo físico.
 
 Referencia: Gomes, Marzec y Endres (2019), tabla 2, correlación de Elevatorski: https://new.scielo.br/j/rbrh/a/XVJznmF994wFdHwQ8wgXXRs/?ilang=pt_BR&lang=en
 
 Prueba adicional: node tests/jump-location.test.mjs verifica conjugado analítico, longitud variable, coincidencia en P3, extremos recalculados, cobertura insuficiente, compatibilidad manual y migración.
+
+### Diagnóstico y verificación de la coincidencia
+
+La búsqueda evalúa los puntos entre filas mediante un paso estándar desde la sección calculada adyacente, respetando la dirección de integración y la rasante global; no interpola linealmente el tirante para decidir los cambios de signo. Los candidatos aceptados se verifican nuevamente en las ramas completas.
+
+Los diagnósticos distinguen cobertura insuficiente, falta de coincidencia de tirantes, coincidencia con energía incompatible y solución compatible. La energía se verifica únicamente después de cumplir la tolerancia del tirante. Una pareja de ensayo sin coincidencia mantiene la energía como «no evaluada», aunque su diferencia de energías sea negativa. Se informan R mínimo/máximo y advertencias de P3 fuera de cobertura, sin extrapolar ni modificar N/X automáticamente. La prueba de regresión reproduce las coberturas 0.015–0.965 m y 0.550–1.500 m.

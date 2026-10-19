@@ -32,3 +32,14 @@ assert.ok(!locatedHTML.includes('NaN'));
 const locatedReport=renderToStaticMarkup(<FlumeReport d={empirical} solution={located} date="2026-10-19" revision={1} dirty={false}/>);
 assert.ok(locatedReport.includes('Elevatorski'));assert.ok(locatedReport.includes('Coincidencia: R'));
 console.log('Salto por conjugados: curvas superpuestas, tarjetas P2/P3, residuo, traza y anexo: OK');
+
+const limitedCase=newProject({section:'rectangular',q:.001,b:.1,n:.01,s:.001,height:.3,freeboard:.01,start:0,end:1.5,step:.05,grades:[{end:1.5,slope:.001}],flume:{inlet:{height:.1,width:.1},outlet:{height:.05,width:.1},super:{station:.015,depth:.006,count:20,interval:.05},sub:{count:20,interval:.05},jump:{lengthMethod:'elevatorski',acceptNeglect:true}}}) as Project;
+const unmatchedCase=solveFlume(limitedCase) as unknown as FlumeSolution;
+assert.equal(unmatchedCase.jump.status,'depth-mismatch');
+const unmatchedHTML=renderToStaticMarkup(<JumpView d={limitedCase} solution={unmatchedCase} onChange={()=>{}}/>);
+for(const text of ['No se encontró coincidencia','No evaluada: falta coincidencia','Pendiente de coincidencia','R mínimo','hacia aguas arriba'])assert.ok(unmatchedHTML.includes(text),text);
+assert.ok(!unmatchedHTML.includes('La pareja propuesta no produce pérdida positiva'));
+const unmatchedReport=renderToStaticMarkup(<FlumeReport d={limitedCase} solution={unmatchedCase} date="2026-10-19" revision={1} dirty={false}/>);
+assert.ok(unmatchedReport.includes('no evaluada; falta coincidencia'));
+assert.ok(!unmatchedReport.includes('NaN'));assert.ok(!unmatchedReport.includes('undefined'));
+console.log('Diagnóstico del salto: coincidencia pendiente, energía no evaluada y cobertura explícita en interfaz y anexo: OK');
