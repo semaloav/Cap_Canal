@@ -51,6 +51,6 @@ assert.ok(solveGVF({...p,overrides:{"50":{q:.3}}}).rows.every(r=>r.state===null)
 assert.ok(solveGVF({...p,overrides:{"50":{section:"triangular"}}}).rows.every(r=>r.state===null));
 const bad=solveGVF({...withPlate,gvf:{...withPlate.gvf,regime:"supercritical",depth:.05}});
 assert.equal(bad.complete,false);assert.ok(bad.rows.some(r=>r.state===null));
-const saved=validateProject(JSON.parse(JSON.stringify(withPlate)));assert.equal(saved.gvf.depth,.7);assert.equal(saved.schemaVersion,5);
+const saved=validateProject(JSON.parse(JSON.stringify(withPlate)));assert.equal(saved.gvf.depth,.7);assert.equal(saved.schemaVersion,6);
 assert.throws(()=>validateProject({...p,gvf:{...p.gvf,contraction:-1}}));
 console.log("FGV: uniforme en 3 geometrías y 2 regímenes, balance de energía, RK4 independiente, convergencia de malla, barraje/orificio analítico, Villemonte, contornos y fallos explícitos: OK");

@@ -8,9 +8,9 @@ export const fmt=(v:number|null|undefined,n=4)=>v===null||v===undefined||!Number
 export const labels:Record<string,string>={rectangular:"Rectangular",trapezoidal:"Trapezoidal",triangular:"Triangular"};
 export function NumberInput({value,onChange,label,unit,disabled=false}:{value:number;onChange:(v:number)=>void;label:string;unit?:string;disabled?:boolean}){return <label className="field"><span>{label}<small>{unit}</small></span><input type="number" step="any" value={Number.isFinite(value)?value:""} disabled={disabled} onChange={e=>onChange(e.target.value===""?NaN:Number(e.target.value))}/></label>;}
 export function StationInput({value,onChange,label}:{value:number;onChange:(v:number)=>void;label:string}){
- const [text,setText]=useState(Number.isFinite(value)?stationLabel(value):"");const [invalid,setInvalid]=useState(false);const [focused,setFocused]=useState(false);
- useEffect(()=>{if(!focused&&Number.isFinite(value)){setText(stationLabel(value));setInvalid(false);}},[value,focused]);
- return <label className="field"><span>{label}<small>km + m</small></span><input aria-invalid={invalid} value={text} onFocus={()=>setFocused(true)} onChange={e=>{setText(e.target.value);try{const s=parseStation(e.target.value);setInvalid(false);onChange(s);}catch{setInvalid(true);onChange(NaN);}}} onBlur={()=>{setFocused(false);if(Number.isFinite(value))setText(stationLabel(value));}}/>{invalid&&<small className="input-error">Usa 0+020.00 o metros.</small>}</label>;
+ const [text,setText]=useState(Number.isFinite(value)?stationLabel(value,6):"");const [invalid,setInvalid]=useState(false);const [focused,setFocused]=useState(false);
+ useEffect(()=>{if(!focused&&Number.isFinite(value)){setText(stationLabel(value,6));setInvalid(false);}},[value,focused]);
+ return <label className="field"><span>{label}<small>km + m</small></span><input aria-invalid={invalid} value={text} onFocus={()=>setFocused(true)} onChange={e=>{setText(e.target.value);try{const s=parseStation(e.target.value);setInvalid(false);onChange(s);}catch{setInvalid(true);onChange(NaN);}}} onBlur={()=>{setFocused(false);if(Number.isFinite(value))setText(stationLabel(value,6));}}/>{invalid&&<small className="input-error">Usa 0+020.00 o metros.</small>}</label>;
 }
 export function Section({d,r}:{d:Project;r:Hydro}){
  const b=d.section==="triangular"?0:d.b,z=d.section==="rectangular"?0:d.z;

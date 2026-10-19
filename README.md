@@ -1,67 +1,76 @@
-# Cap_Canal v2.1
-Aplicación web privada para diseñar un canal completo por progresivas, mantener varios proyectos y exportar el anexo técnico.
+# Cap_Canal v3
 
-## Flujo en cinco pestañas
-1. **Proyecto y perfil:** identificación, material/revestimiento, progresivas inicial/final, intervalo, referencia de cotas y perfil del terreno editable o pegado desde Excel.
-2. **Alineamiento:** cota de fondo inicial y rasante continua por tramos; geometría opcional en planta con rectas y curvas circulares tangentes (coordenadas iniciales y azimut).
-3. **Sección típica y barrajes:** geometría rectangular, trapezoidal o triangular, caudal, Manning, dimensiones, borde libre y límites de velocidad.
-4. **Perfil FGV:** secciones base obligatorias, intervalo X independiente, caras de barrajes y cambios de pendiente. Tabla con procedencia, cotas, pérdidas e iteraciones. La geometría base sigue editable en el panel desplegable.
-5. **Exportar anexo:** memoria completa imprimible en PDF (A4 horizontal), tablas de todas las secciones, CSV y respaldo del proyecto en JSON.
+Aplicación de cálculo para un canal experimental con rebose de entrada, rama supercrítica, salto hidráulico, rama subcrítica y rebose de salida.
 
-Los proyectos existentes de v1 se abren sin perder sus parámetros. Se les añade una malla inicial de 0 a 100 m, intervalo de 10 m y cota inicial 0 m; estos valores son editables y deben reemplazarse con los del proyecto.
+Aplicación pública: https://semaloav.github.io/Cap_Canal/
 
-## Cálculo y herencia
-- Unidades SI, progresivas en metros, formato km+mmm.mm.
-- Secciones en inicio/fin, intervalo nominal, puntos del terreno y quiebres del alineamiento. Máximo 1000 secciones.
-- Terreno interpolado linealmente, sin extrapolación.
-- Fondo continuo: cota inicial menos la integral de las pendientes por tramo; descenso positivo.
-- Manning, tirante crítico, velocidad, Froude y capacidad con borde libre por sección de flujo uniforme local.
-- En quiebres se usa la pendiente del tramo siguiente; en el extremo final, la anterior.
-- Cambiar la típica modifica solo campos heredados. Los ajustes locales permanecen hasta restaurarlos.
-- Los ajustes que quedan fuera de una malla modificada se conservan, se señalan y pueden limpiarse explícitamente.
-- Rectas y curvas circulares en planta mediante integración de la tangente: azimut desde el norte en sentido horario. No incluye clotoides, transformación geodésica ni validación hidráulica de curvas.
+## Seis pestañas
 
-## Persistencia y acceso
-El código está en este repositorio privado; los proyectos se guardan en D1 con la vinculación DB y se autorizan por usuario autenticado en Sites. Se mantiene control de revisión para evitar sobrescribir cambios concurrentes. El esquema existente conserva el proyecto completo en payload JSON, sin migración de tablas adicional para v2. El cuerpo de cada proyecto se limita a 750 kB.
+1. **Proyecto:** identificación, material, tipo de sección, referencia de cotas y terreno opcional.
+2. **Condiciones hidráulicas:** caudal constante, Manning, dimensiones, altura y borde libre; extensión, malla de diseño, fondo inicial y pendientes por tramo; planta opcional; barrajes de entrada y salida y sus secciones de aproximación.
+3. **Entrada · P0 y P1:** Cd de entrada, carga de rebose, nivel de aproximación y cálculo de P1 por energía con pérdida explícita o por tirante medido. Se puede indicar salto directo en el impacto, sin fabricar un P1 hidrostático.
+4. **Tablas FGV:** rama supercrítica aguas abajo con progresiva y tirante iniciales manuales; rama subcrítica aguas arriba desde la aproximación al barraje de salida. Cada rama tiene su propio N y X. El botón «Usar resultado del punto 1» copia esos datos una vez y permite modificarlos posteriormente.
+5. **Salto hidráulico:** buscar una posición compatible o comprobar un P2 manual. P3 = P2 + Lj. Lj es un dato medido o justificado externamente, no una correlación universal. Se verifica cantidad de movimiento, régimen y pérdida positiva de energía.
+6. **Reporte y anexo:** hipótesis y coeficientes, condiciones de entrada y salida, geometría, ambas tablas FGV, diagnóstico del salto, perfil con puntos 0–4, impresión/PDF, CSV y respaldo JSON.
 
-## Desarrollo
-Node 22.13 o superior. npm ci; npm run dev; npm run build.
-Cuando cambie el esquema: npm run db:generate. Las migraciones están en drizzle/.
-Pruebas: node tests/hydraulics.test.mjs y node tests/project.test.mjs.
-La publicación usa el flujo de Sites y conserva .openai/hosting.json.
+## Condiciones de cálculo
 
-## Alcance
-El perfil principal se resuelve por FGV permanente 1D y paso estándar, con caudal constante y una rama subcrítica o supercrítica. La evaluación uniforme local se conserva como referencia para la típica. No se incluyen saltos hidráulicos/régimen mixto, sobreelevación en curvas, captaciones laterales, derrames, erosión, sedimentos, excavaciones ni estabilidad estructural. El material no asigna automáticamente rugosidades ni criterios de velocidad. Los criterios son definidos por el usuario; el cumplimiento no implica aprobación integral. Ver el apartado FGV para el método, contornos y límites.
+- Unidades SI y progresivas en metros, presentadas con seis decimales cuando corresponde a láminas o puntos insertados.
+- Secciones rectangular, trapezoidal o triangular. Caudal constante en ambas ramas, incluso si un respaldo antiguo conserva ajustes locales de Q.
+- La rasante es única: Z(x) = Z inicial − integral de S por tramos. Nunca se reinicia al comenzar una rama.
+- En esta versión las pendientes admitidas son positivas, hasta 1 m/m, en el sentido creciente de progresiva. Manning y el tirante normal son referencias de flujo uniforme; no sustituyen el perfil FGV.
+- El material no asigna automáticamente Manning ni límites de velocidad.
+- La geometría local se interpola desde la malla de diseño; modificar X no cambia sus anclajes.
+
+### Rebose y entrada
+
+Los dos controles terminales utilizan rebose rectangular libre de lámina delgada, con napa ventilada:
+
+`Q = (2/3) Cd bw sqrt(2g) H^(3/2)`
+
+La cresta se refiere al fondo de la lámina; la aproximación tiene su propia progresiva. El ancho efectivo y Cd deben representar el montaje y requieren validación/calibración. Se omite la velocidad de aproximación en esta ley; se informa V²/(2gH). La alerta del 5 % es orientativa y no una garantía de validez. Una sección de aproximación coincidente con la lámina es una idealización que debe justificarse.
+
+Con V0 ≈ 0, la energía disponible en P1 es `eta0 − he`. P1 se obtiene resolviendo `Z1 + y1 + Q²/(2g A1²) = eta0 − he` en la rama supercrítica, con alfa = 1. **Cd no determina he.** he = 0 es el caso ideal sin pérdidas. Un tirante medido permite inferir la pérdida; se rechazan ganancias de energía. No se modela la napa en caída como FGV.
+
+### FGV y malla
+
+El paso estándar resuelve `Eu − Ed − hf − hlocal = 0`, con `hf = (Sfu + Sfd) L/2`, `Sf = [nQ/(A R^(2/3))]²` y L positivo. El avance de progresiva es negativo en el cálculo subcrítico hacia aguas arriba. Se itera por bisección dentro del régimen solicitado, con refinamiento adaptativo cuando se necesita.
+
+N incluye la sección inicial: hay N−1 intervalos regulares. Se admiten 2–2000 secciones regulares por rama. Se conservan los nodos de diseño situados dentro de su alcance y se añaden caras de elementos, quiebres y refinamientos. Las coincidencias se cuentan una vez por rama. La malla de diseño admite hasta 1000 nodos; el refinamiento tiene un límite de 20000 filas.
+
+Las tablas pueden compartir progresivas con tirantes distintos. Los resultados de las zonas superpuestas son ramas independientes, no dos niveles físicos simultáneos. No se recorta silenciosamente una rama que excede el alineamiento. Un contorno incompatible deja sus filas sin resultados.
+
+Los elementos interiores anteriores se mantienen en Condiciones hidráulicas. Se resuelven en la rama subcrítica como controles de rebose/orificio, con corrección empírica de Villemonte para rebose sumergido. El cruce supercrítico de un control interior se detiene con diagnóstico. Dentro del espesor de una lámina no se aplica FGV.
+
+### Salto hidráulico
+
+Se utiliza `M = Q²/(gA) + b y²/2 + z y³/3`, beta = 1. La profundidad conjugada local se calcula numéricamente; para rectangular coincide con Bélanger. La búsqueda compara los estados en **x2 y x3 = x2 + Lj**, y recalcula ambos extremos con FGV, sin aceptar una mera interpolación como solución final.
+
+El balance es `M3 − M2 = F externa neta/(rho g)`, con fuerza positiva aguas abajo. El usuario debe especificar esta fuerza o declarar justificable despreciar peso y fricción. Esta última hipótesis no es universal para saltos de longitud finita o pendiente apreciable. La búsqueda exige geometría prismática, sin controles interiores en el salto. No se calculan fuerzas de una transición, el impacto de la napa ni el detalle interno del salto.
+
+La tolerancia relativa de compatibilidad de momento es 1e−5. Se exige pérdida de energía positiva. Si hay varias ubicaciones candidatas, se solicita comprobar P2 manualmente; no se elige una arbitrariamente. El perfil conectado interrumpe FGV dentro del salto. El inicio manual de la rama supercrítica puede diferir del P1 calculado y permanece identificado como tal.
+
+## Guardado y acceso
+
+GitHub Pages funciona sin servidor ni cuenta. Los proyectos se guardan en localStorage, con revisión para proteger cambios concurrentes. El JSON permite trasladarlos a otro navegador o equipo; no hay sincronización automática. Se importan respaldos v1–v6 y se guardan como v6, conservando geometría, ajustes y configuración FGV anterior. La nueva configuración se almacena en `flume`.
+
+El código del alojamiento anterior y sus rutas autenticadas se conservan para compatibilidad; no se incluyen datos privados en el paquete estático ni se modifica aquel alojamiento.
+
+## Desarrollo y publicación
+
+Node 24 recomendado. Instalación: `npm ci --include=dev --include=optional --no-audit --no-fund`.
+
+- Tipos: `npx tsc --noEmit`.
+- Pruebas: `node --test tests/*.test.mjs` (la prueba de Pages requiere compilar antes).
+- Compilación pública: `npm run build:pages`.
+- Validación del paquete: `node tests/pages-build.test.mjs`.
+
+`.github/workflows/pages.yml` comprueba cálculos, migración, guardado, interfaz SSR, tipos y paquete estático; publica en GitHub Pages tras un push a main. La URL se considera actualizada cuando el trabajo deploy termina correctamente. Las verificaciones automatizadas no sustituyen la calibración del modelo físico ni una revisión visual en navegador.
 
 ## Referencias
-- USACE HEC-RAS, Uniform Flow Computations: https://www.hec.usace.army.mil/confluence/rasdocs/ras1dtechref/6.6/stable-channel-design-functions/uniform-flow-computations
-- USBR, Water Measurement Manual, cap. 2, sección 11: https://www.usbr.gov/tsc/techreferences/mands/wmm/chap02_11.html
 
-## Barrajes de lámina
-En la pestaña Sección típica se pueden añadir hasta 20 láminas por progresiva, definidas por espesor longitudinal, cresta sobre el fondo y abertura inferior opcional. La progresiva identifica la cara aguas arriba. Cada barraje se incorpora a la malla de secciones, al perfil, al CSV y al anexo completo. Se permiten configuraciones apoyada en el fondo para rebose o levantada para paso inferior; si se supera la cresta pueden ocurrir ambos pasos.
-La comprobación hidráulica manual es opcional y no alimenta FGV. Sus tirantes son ingresados por el usuario. Los coeficientes Cd se comparten con el motor FGV y sus valores iniciales son ejemplos que requieren calibración. Se usa integración hidrostática por franjas: rebose y orificio con entrada cubierta. Para orificio rectangular sumergido, Q=Cd*A*sqrt(2*g*(y1-y2)); la generalización a ancho variable requiere calibración. Se omiten velocidad de aproximación, flujo inverso y corrección por cresta gruesa. El motor FGV sí modifica el perfil e incluye interacción entre estructuras y corrección empírica de Villemonte para rebose sumergido; la comprobación manual solo admite rebose libre.
-El respaldo JSON v5 separa el intervalo X de FGV del intervalo de secciones base y admite importación de v1/v2/v3/v4/v5. Al abrir versiones anteriores, X toma el intervalo base guardado. Sin migración de tablas: se conserva todo en payload.
-Pruebas adicionales: node tests/barriers.test.mjs.
-Referencias del elemento: https://www.usbr.gov/tsc/techreferences/mands/wmm/chap02_09.html y https://www.usbr.gov/tsc/techreferences/mands/wmm/chap09_05.html.
+- USBR, Water Measurement Manual: https://www.usbr.gov/tsc/techreferences/mands/wmm/chap02_09.html
+- USACE, ecuación de energía: https://www.hec.usace.army.mil/confluence/rasdocs/ras1dtechref/6.6/theoretical-basis-for-one-dimensional-and-two-dimensional-hydrodynamic-calculations/1d-steady-flow-water-surface-profiles/equations-for-basic-profile-calculations
+- USACE, régimen mixto y fuerza específica: https://www.hec.usace.army.mil/confluence/rasdocs/ras1dtechref/6.1/overview-of-optional-capabilities/mixed-flow-regime-calculations
 
-## Acceso público sin registro
-Cualquier persona con el enlace puede calcular y exportar sin una cuenta. Los visitantes guardan proyectos en el navegador (localStorage), con control de revisión entre pestañas. El respaldo JSON permite moverlos entre equipos; no se sincronizan automáticamente. Los usuarios que inician sesión mantienen su espacio privado en línea. Las rutas API de proyectos siguen exigiendo autenticación y comprueban el propietario en cada operación. Los proyectos existentes no se publican. Pruebas: node tests/guest-projects.test.mjs.
-
-## Publicación en GitHub Pages
-La versión estática se compila con `npm run build:pages` y se publica desde `.github/workflows/pages.yml`. Funciona sin servidor, cuenta ni inicio de sesión. Los diseños se guardan exclusivamente en el navegador y se transfieren mediante JSON; los datos privados del alojamiento anterior no se incluyen ni se sincronizan. La URL prevista es https://semaloav.github.io/Cap_Canal/ y solo se considera publicada tras finalizar correctamente el trabajo deploy. El repositorio debe tener Pages configurado con Source = GitHub Actions. El workflow intenta habilitarlo; si GitHub exige permisos administrativos, se debe activar en Settings → Pages.
-
-## Flujo gradualmente variado (FGV)
-
-La cuarta pestaña calcula el perfil permanente 1D por paso estándar. Define régimen, contorno e intervalo; las pérdidas usan Manning y coeficientes de contracción/expansión. Los barrajes son controles internos en la rama subcrítica: se invierte su ley de descarga con el nivel aguas abajo calculado, incluyendo rebose y orificio, y corrección empírica de Villemonte para rebose sumergido. El espesor se conserva como geometría de lámina, sin fricción interior.
-
-Requiere caudal constante y una sola familia de sección; no resuelve saltos/régimen mixto, aportes laterales ni derrames. Una incompatibilidad detiene el cálculo y deja los nodos pendientes sin resultados. Geometría y n se interpolan linealmente entre nodos durante los subpasos adaptativos. La tolerancia es numérica, no una estimación de exactitud física. Validar Cd, condiciones de contorno y sensibilidad al intervalo para cada diseño.
-
-`node tests/gvf.test.mjs` contrasta flujo uniforme en 3 geometrías y 2 regímenes, balance de energía, integración RK4 independiente, refinamiento de malla, orificio analítico y fallos explícitos. El CSV y el anexo incluyen las iteraciones FGV. Los respaldos v1–v4 migran a v5.
-
-### Generación y conservación de secciones
-
-Primero se generan todas las secciones base, incluidos los extremos, por número o separación. Después se añaden los puntos del intervalo X de FGV, los quiebres de pendiente y las caras de cada barraje (progresiva y progresiva + espesor). Los puntos de terreno y planta también se conservan. Las coincidencias comparten una sección física con todas sus etiquetas; cada fila declara su origen y el resumen desglosa las adiciones sin contarlas dos veces. Cambiar X conserva las secciones base y sus ajustes geométricos.
-
-El paso estándar usa la distancia real entre nodos y las cotas de rasante integradas por tramo. Ningún paso FGV atraviesa un cambio de pendiente sin un nodo en él. Los subpasos adaptativos aceptados se exportan como secciones adicionales con sus propios resultados. La malla se presenta aun si el perfil no converge. Si un punto base/X cae dentro de la lámina, permanece identificado sin aplicarle FGV de canal abierto: la ley del barraje enlaza sus caras. El orificio y el rebose usan niveles referidos al fondo aguas arriba, por lo que la cota aguas abajo incorpora la caída de rasante a través del espesor.
-
-`node tests/section-mesh.test.mjs` verifica conteos, independencia de X, coincidencias, preservación de geometría, caras físicas, quiebres, refinamiento visible y balance de energía de cada paso real.
+No se incluyen aportes laterales, derrames con reducción de Q, sobreelevación en curvas, sedimentos ni estabilidad estructural. Los resultados no constituyen una aprobación integral del canal.

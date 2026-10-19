@@ -23,3 +23,5 @@ const failed=solveGVF({...d,gvf:{...d.gvf,depth:.001}}) as unknown as GVFSolutio
 const failedHTML=renderToStaticMarkup(<GVFTable solution={failed} print/>);
 assert.ok(failedHTML.includes("Sin calcular"));assert.ok(!failedHTML.includes("Converge"));
 console.log("FGV interfaz y anexo: contornos, tabla, caras calculadas, controles y resultados incompletos: OK");
+
+import "./flume-render.fixture";

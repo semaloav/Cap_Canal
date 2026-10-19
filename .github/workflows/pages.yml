@@ -31,9 +31,12 @@ jobs:
           node tests/project.test.mjs
           node tests/barriers.test.mjs
           node tests/gvf.test.mjs
+          node tests/flume.test.mjs
           node tests/section-mesh.test.mjs
           node tests/gvf-ui.test.mjs
           node tests/guest-projects.test.mjs
+      - name: Verificar tipos
+        run: npx tsc --noEmit
       - name: Compilar aplicación sin servidor
         run: npm run build:pages
       - name: Validar publicación estática

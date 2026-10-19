@@ -43,7 +43,7 @@ const failed=solveGVF({...d,gvf:{...d.gvf,depth:.001}});assert.equal(failed.rows
 const interior=solveGVF({...d,step:10,barriers:[{...plate,station:49.99,thickness:.02}],gvf:{...d.gvf,interval:10}});
 assert.equal(interior.error,"");const kept=interior.rows.find(r=>r.station===50);assert.ok(kept.origins.includes("base"));assert.equal(kept.state,null);assert.match(kept.status,/Interior/);
 const old={...d,schemaVersion:4,gvf:{depth:.7}};
-const migrated=validateProject(old);assert.equal(migrated.gvf.interval,20);assert.equal(migrated.schemaVersion,5);
+const migrated=validateProject(old);assert.equal(migrated.gvf.interval,20);assert.equal(migrated.schemaVersion,6);
 assert.throws(()=>validateProject({...d,gvf:{...d.gvf,interval:0}}));
 assert.throws(()=>validateProject({...d,barriers:[{...plate,thickness:1e-8}]}));
 assert.equal(stationLabel(50.005,6),"0+050.005000");
