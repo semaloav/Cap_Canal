@@ -10,7 +10,7 @@ Aplicación pública: https://semaloav.github.io/Cap_Canal/
 2. **Condiciones hidráulicas:** caudal constante, Manning, dimensiones, altura y borde libre; extensión, malla de diseño, fondo inicial y pendientes por tramo; planta opcional; barrajes de entrada y salida y sus secciones de aproximación.
 3. **Entrada · P0 y P1:** Cd de entrada, carga de rebose, nivel de aproximación y cálculo de P1 por energía con pérdida explícita o por tirante medido. Se puede indicar salto directo en el impacto, sin fabricar un P1 hidrostático.
 4. **Tablas FGV:** rama supercrítica aguas abajo con progresiva y tirante iniciales manuales; rama subcrítica aguas arriba desde la aproximación al barraje de salida. Cada rama tiene su propio N y X. El botón «Usar resultado del punto 1» copia esos datos una vez y permite modificarlos posteriormente.
-5. **Salto hidráulico:** buscar una posición compatible o comprobar un P2 manual. P3 = P2 + Lj. Lj es un dato medido o justificado externamente, no una correlación universal. Se verifica cantidad de movimiento, régimen y pérdida positiva de energía.
+5. **Salto hidráulico:** buscar una posición compatible o comprobar un P2 manual. P3 = P2 + Lj. Lj puede ser medido o calcularse con la correlación de Elevatorski, Lj = 6.9(y conjugado − y2), bajo las hipótesis de salto clásico rectangular. Se verifica cantidad de movimiento, régimen y pérdida positiva de energía.
 6. **Reporte y anexo:** hipótesis y coeficientes, condiciones de entrada y salida, geometría, ambas tablas FGV, diagnóstico del salto, perfil con puntos 0–4, impresión/PDF, CSV y respaldo JSON.
 
 ## Condiciones de cálculo
@@ -74,3 +74,15 @@ Node 24 recomendado. Instalación: `npm ci --include=dev --include=optional --no
 - USACE, régimen mixto y fuerza específica: https://www.hec.usace.army.mil/confluence/rasdocs/ras1dtechref/6.1/overview-of-optional-capabilities/mixed-flow-regime-calculations
 
 No se incluyen aportes laterales, derrames con reducción de Q, sobreelevación en curvas, sedimentos ni estabilidad estructural. Los resultados no constituyen una aprobación integral del canal.
+
+### Ubicación por curvas FGV y tirante conjugado (pestaña 5)
+
+Selecciona «Calculada · Lj = 6.9 (y conjugado − y2)» para buscar P2 desde aguas arriba. En cada progresiva se obtiene y2 de la curva supercrítica, se calcula el conjugado por cantidad de movimiento y se estima Lj. P3 se ubica en x2 + Lj; el residuo es R(x2) = y_sub(x3) − y_conjugado. No se compara el conjugado con la curva subcrítica en x2. Un cambio de signo permite refinar mediante bisección, con tolerancia absoluta de tirante de 1e−6 m y resolución de progresiva de 1e−6 m.
+
+Las interpolaciones se utilizan para explorar la curva y acotar candidatos. Los extremos aceptados se recalculan con FGV. El gráfico superior siempre superpone ambas curvas por nivel Z+y; las tarjetas muestran progresiva, fondo, tirante, nivel, velocidad y Froude de P2 y P3. Se informa la longitud calculada, diferencia de tirantes, pérdida de energía, caída del fondo y traza de iteraciones. Las parejas no compatibles se identifican como ensayos. El perfil conectado mantiene una interrupción dentro del salto.
+
+Esta opción solo admite sección rectangular prismática, sin barrajes dentro del salto, y requiere declarar justificables la pendiente suficientemente pequeña y el desprecio de peso/fricción. No se aplica automáticamente a otras geometrías. La longitud medida y el balance general anterior permanecen disponibles; los proyectos anteriores conservan ese método. La correlación no sustituye la calibración del modelo físico.
+
+Referencia: Gomes, Marzec y Endres (2019), tabla 2, correlación de Elevatorski: https://new.scielo.br/j/rbrh/a/XVJznmF994wFdHwQ8wgXXRs/?ilang=pt_BR&lang=en
+
+Prueba adicional: node tests/jump-location.test.mjs verifica conjugado analítico, longitud variable, coincidencia en P3, extremos recalculados, cobertura insuficiente, compatibilidad manual y migración.

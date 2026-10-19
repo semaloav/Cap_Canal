@@ -19,3 +19,5 @@
 @media print{.flume-values{grid-template-columns:repeat(4,1fr)}.flume-values>div{break-inside:avoid}.project-report .notice{display:block}.project-report .long-profile{break-inside:avoid}}
 
 .panel-body>.switch{white-space:normal;line-height:1.6;justify-content:flex-start;margin:12px 0}.panel-body>.switch input{flex-shrink:0}
+
+.jump-point-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.jump-point{padding:14px;border:1px solid #dbe8ee;border-radius:10px}.jump-point h3{margin-top:0}@media(max-width:780px){.jump-point-grid{grid-template-columns:1fr}}

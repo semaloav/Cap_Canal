@@ -21,3 +21,14 @@ assert.ok(renderToStaticMarkup(<FlumeReport d={d} solution={incomplete} date="20
 const app=renderToStaticMarkup(<CanalApp guest standalone/>);
 for(const text of ['Proyecto','Condiciones hidráulicas','Entrada · P0 y P1','Tablas FGV','Salto hidráulico','Reporte y anexo','de 6'])assert.ok(app.includes(text),text);
 console.log('Interfaz de seis pestañas: condiciones, entrada, dos ramas, salto, perfil y reporte con diagnóstico: OK');
+
+const empirical={...d,flume:{...d.flume,jump:{...d.flume.jump,lengthMethod:'elevatorski'}}};
+const located=solveFlume(empirical) as unknown as FlumeSolution;
+assert.equal(located.jump.complete,true,located.jump.error);
+const locatedHTML=renderToStaticMarkup(<JumpView d={empirical} solution={located} onChange={()=>{}}/>);
+for(const text of ['Curvas superpuestas','P2 · inicio','P3 · final','Diferencia disponible','Tirante conjugado requerido','iteraciones de coincidencia','0.000001'])assert.ok(locatedHTML.includes(text),text);
+assert.ok(locatedHTML.includes('stroke="#28895c"'));assert.ok(locatedHTML.includes('stroke="#089bb6"'));
+assert.ok(!locatedHTML.includes('NaN'));
+const locatedReport=renderToStaticMarkup(<FlumeReport d={empirical} solution={located} date="2026-10-19" revision={1} dirty={false}/>);
+assert.ok(locatedReport.includes('Elevatorski'));assert.ok(locatedReport.includes('Coincidencia: R'));
+console.log('Salto por conjugados: curvas superpuestas, tarjetas P2/P3, residuo, traza y anexo: OK');

@@ -32,6 +32,7 @@ jobs:
           node tests/barriers.test.mjs
           node tests/gvf.test.mjs
           node tests/flume.test.mjs
+          node tests/jump-location.test.mjs
           node tests/section-mesh.test.mjs
           node tests/gvf-ui.test.mjs
           node tests/guest-projects.test.mjs
